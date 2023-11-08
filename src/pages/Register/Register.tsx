@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import './register.scss';
 import { h } from 'preact';
-import { login, register } from '../../utils/auth';
+import { useAuth } from '../../context/AuthContext';
 
 const Register = ({
     path,
@@ -47,6 +47,8 @@ const LoginForm = () => {
         username: '',
         password: '',
     });
+
+    const { login } = useAuth();
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const prefill_username = urlParams.get('username');
@@ -73,7 +75,7 @@ const LoginForm = () => {
         <>
             <div class="layout_container">
                 <h5 class="text-center mb-5">Login</h5>
-                <form onClick={(e) => handleLogin(e)}>
+                <form onSubmit={(e) => handleLogin(e)}>
                     <input
                         type="text"
                         class="form-control my-3"
@@ -111,11 +113,13 @@ const LoginForm = () => {
 };
 
 const RegisterForm = () => {
+    const { register } = useAuth();
+
     const [data, setdata] = useState({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
+        username: 'ryal_rafterr',
+        email: 'raftere@gmail.com',
+        password: '123456',
+        confirmPassword: '123456',
     });
     const handleDataChange =
         (name: string) => (e: h.JSX.TargetedEvent<HTMLInputElement>) => {
@@ -128,7 +132,8 @@ const RegisterForm = () => {
         console.log(data);
     }, [data]);
 
-    function handleRegister() {
+    function handleRegister(e: h.JSX.TargetedEvent<HTMLFormElement>) {
+        e.preventDefault();
         const { username, email, password } = data;
         const simplifiedData = { username, email, password };
         register(simplifiedData);
@@ -138,43 +143,45 @@ const RegisterForm = () => {
         <>
             <div class="layout_container">
                 <h5 class="text-center mb-4">Register</h5>
-                <input
-                    type="text"
-                    class="form-control my-3"
-                    placeholder="Username"
-                    value={data.username}
-                    onInput={handleDataChange('username')}
-                ></input>
-                <input
-                    type="email"
-                    class="form-control my-3"
-                    placeholder="Email"
-                    value={data.email}
-                    onInput={handleDataChange('email')}
-                ></input>
-                <input
-                    type="password"
-                    class="form-control my-3"
-                    id="exampleFormControlInput1"
-                    placeholder="Password"
-                    value={data.password}
-                    onInput={handleDataChange('password')}
-                ></input>
-                <input
-                    type="password"
-                    class="form-control my-3"
-                    id="exampleFormControlInput1"
-                    placeholder="Confirm Password"
-                    value={data.confirmPassword}
-                    onInput={handleDataChange('confirmPassword')}
-                ></input>
-                <button
-                    disabled={Object.values(data).some((val) => !val)}
-                    className="btn btn_primary rounded-pill w-100"
-                    onClick={() => handleRegister()}
-                >
-                    Register
-                </button>
+                <form onSubmit={(e) => handleRegister(e)}>
+                    <input
+                        type="text"
+                        class="form-control my-3"
+                        placeholder="Username"
+                        value={data.username}
+                        onInput={handleDataChange('username')}
+                    ></input>
+                    <input
+                        type="email"
+                        class="form-control my-3"
+                        placeholder="Email"
+                        value={data.email}
+                        onInput={handleDataChange('email')}
+                    ></input>
+                    <input
+                        type="password"
+                        class="form-control my-3"
+                        id="exampleFormControlInput1"
+                        placeholder="Password"
+                        value={data.password}
+                        onInput={handleDataChange('password')}
+                    ></input>
+                    <input
+                        type="password"
+                        class="form-control my-3"
+                        id="exampleFormControlInput1"
+                        placeholder="Confirm Password"
+                        value={data.confirmPassword}
+                        onInput={handleDataChange('confirmPassword')}
+                    ></input>
+                    <button
+                        disabled={Object.values(data).some((val) => !val)}
+                        className="btn btn_primary rounded-pill w-100"
+                    >
+                        Register
+                    </button>
+                </form>
+
                 <div class="text-divider">
                     <span>or</span>
                 </div>

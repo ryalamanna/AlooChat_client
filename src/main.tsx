@@ -1,5 +1,11 @@
-import { render } from 'preact'
-import { App } from './app.tsx'
-import './index.css'
+import { render } from 'preact';
+import { App } from './app.tsx';
+import './index.css';
+import { AuthProvider } from './context/AuthContext.tsx';
 
-render(<App />, document.getElementById('app')!)
+render(
+    <AuthProvider>
+        <App />
+    </AuthProvider>,
+    document.getElementById('app')!
+);

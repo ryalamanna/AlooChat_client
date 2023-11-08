@@ -31,6 +31,7 @@ const SideBar = () => {
                     <button className="btn btn_primary">+</button>
                 </div>
                 <PeoppleList />
+                <div className="bottom_fade"></div>
             </div>
         </>
     );

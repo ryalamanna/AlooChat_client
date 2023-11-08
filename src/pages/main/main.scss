@@ -1,8 +1,9 @@
 .main_page_container {
     width: 100%;
-    height: calc(100vh - 40px);
+    // height: calc(100vh - 40px);
+    height: 100%;
     background-color: #ffffff;
-    border-radius: 15px;
+    // border-radius: 15px;
     display: grid;
     grid-template-columns: 1fr 3fr;
     box-shadow: 0 0 40px 10px #00000037;
@@ -12,18 +13,30 @@
         border-right: 2px solid #5e5e5e2d;
     }
     .main_section {
-        height: calc(100vh - 40px);
+        // height: calc(100vh - 40px);
+        height: 100vh;
         position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
     }
 }
 
 .sidebar_comp {
     font-size: 16px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
     .logo_container {
         display: flex;
         align-items: center;
         justify-content: start;
         padding: 5% 5%;
+        width: 100%;
         .logo_text {
             font-weight: 700;
             font-size: 1.3em;
@@ -33,6 +46,7 @@
         }
     }
     .search_container {
+        width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -46,11 +60,24 @@
             font-size: 0.8em;
         }
     }
+    .bottom_fade {
+        position: absolute;
+        bottom: 0;
+        background: linear-gradient(
+            180deg,
+            rgba(150, 179, 255, 0) 0%,
+            rgba(255, 255, 255, 1) 100%
+        );
+        width: 100%;
+        z-index: 2;
+        height: 50px;
+    }
 }
 
 .peoplelist_container {
-    height: 500px;
+    // height: 0%;
     overflow-y: scroll;
+    flex: 1;
     .allchats,
     .pinnedchats {
         .title {
@@ -152,7 +179,7 @@
     justify-content: space-between;
     padding: 1% 4%;
     border-bottom: 2px solid #dfdfdf;
-    position: absolute;
+    // position: absolute;
     top: 0;
     width: 100%;
     z-index: 1;
@@ -212,7 +239,9 @@
     overflow-y: scroll;
     background-color: #f5f5f5;
     position: relative;
-    height: 90%;
+    // height: 90%;
+    flex: 1;
+    width: 100%;
 }
 
 .single_chat_container {
@@ -286,8 +315,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1% 4%;
-    position: absolute;
-    bottom: 0;
+    // position: absolute;
+    // bottom: 100px;
     width: 100%;
     background-color: #ffffff;
     height: 10%;

@@ -1,5 +1,6 @@
 // Import necessary modules and utilities
 import axios from 'axios';
+import { LocalStorage } from '../utils';
 // import { LocalStorage } from '../utils';
 
 // Create an Axios instance for API requests
@@ -14,11 +15,11 @@ apiClient.interceptors.request.use(
     function (config) {
         // Retrieve user token from local storage
 
-        // const token = LocalStorage.get('token');
+        const token = LocalStorage.get('token');
 
         // Set authorization header with bearer token
 
-        // config.headers.Authorization = `Bearer ${token}`;
+        config.headers.Authorization = `Bearer ${token}`;
         return config;
     },
     function (error) {
@@ -37,4 +38,12 @@ export const registerUser = (data: {
     username: string;
 }) => {
     return apiClient.post('/user/register', data);
+};
+
+export const getUserChats = () => {
+    return apiClient.get(`/chats`);
+};
+
+export const getChatMessages = (chatId: string) => {
+    return apiClient.get(`/messages/${chatId}`);
 };

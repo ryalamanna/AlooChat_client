@@ -244,20 +244,21 @@
 
 .conversation_body_container {
     display: flex;
-    flex-direction: column;
     overflow-y: scroll;
     background-color: #f5f5f5;
     position: relative;
     // height: 90%;
     flex: 1;
     width: 100%;
+    flex-direction: column-reverse;
 }
 
 .single_chat_container {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    padding: 1% 4%;
+    padding: 1% 15% 1% 4%;
+
     .dp_wrapper {
         padding: 0 15px 0 0;
         img {
@@ -291,7 +292,6 @@
             padding: 8px 18px;
             font-size: 0.8em;
             margin-top: 8px;
-            max-width: 70%;
             color: #515151;
             font-weight: 400;
             box-shadow: 0 2px 7px #00000015;
@@ -301,6 +301,7 @@
 
 .single_chat_container.right {
     flex-direction: row-reverse;
+    padding: 1% 4% 1% 15%;
     .dp_wrapper {
         padding: 0 0 0 15px;
         img{

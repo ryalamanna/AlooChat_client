@@ -1,5 +1,5 @@
 import { useSocket } from '../../context/socketContext';
-import { useEffect, useState, useRef } from 'preact/hooks';
+import { useEffect, useState, useRef, StateUpdater } from 'preact/hooks';
 import './chat.scss';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -7,12 +7,13 @@ import {
     getChatObjectMetadata,
     requestHandler,
 } from '../../utils';
-import { getChatMessages, getUserChats } from '../../api';
+import { getChatMessages, getUserChats, sendMessage } from '../../api';
 import {
     ChatListItemInterface,
     ChatMessageInterface,
 } from '../../interfaces/chat';
 import moment from 'moment';
+import {h} from 'preact'
 
 const CONNECTED_EVENT = 'connected';
 const DISCONNECT_EVENT = 'disconnect';
@@ -39,7 +40,10 @@ const Chat = ({ path }: { path?: string }) => {
     const [unreadMessages, setUnreadMessages] = useState<
         ChatMessageInterface[]
     >([]); // To track unread messages
-    const [messages, setMessages] = useState<ChatMessageInterface[] | null>(null);
+    const [messages, setMessages] = useState<ChatMessageInterface[]>([]);
+    const [message , setMessage] = useState<string>('');
+    const [attachedFiles, setAttachedFiles] = useState<File[]>([]); // To store files attached to messages
+
 
     function onConnect() {
         setIsConnected(true);
@@ -90,9 +94,97 @@ const Chat = ({ path }: { path?: string }) => {
         );
     };
 
+    const handleOnMessageChange = (e: h.JSX.TargetedEvent<HTMLInputElement>) => {
+        // Update the message state with the current input value
+        setMessage(e.currentTarget.value);
+
+        // If socket doesn't exist or isn't connected, exit the function
+        // if (!socket || !isConnected) return;
+
+        // Check if the user isn't already set as typing
+        // if (!selfTyping) {
+        //     // Set the user as typing
+        //     setSelfTyping(true);
+
+        //     // Emit a typing event to the server for the current chat
+        //     socket.emit(TYPING_EVENT, currentChat.current?._id);
+        // }
+
+        // Clear the previous timeout (if exists) to avoid multiple setTimeouts from running
+        // if (typingTimeoutRef.current) {
+        //     clearTimeout(typingTimeoutRef.current);
+        // }
+
+        // Define a length of time (in milliseconds) for the typing timeout
+        // const timerLength = 3000;
+
+        // Set a timeout to stop the typing indication after the timerLength has passed
+        // typingTimeoutRef.current = setTimeout(() => {
+        //     // Emit a stop typing event to the server for the current chat
+        //     socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+
+        //     // Reset the user's typing state
+        //     setSelfTyping(false);
+        // }, timerLength);
+    };
+
+        // Function to send a chat message
+        const sendChatMessage = async () => {
+            // If no current chat ID exists or there's no socket connection, exit the function
+            if (!currentChat.current?._id || !socket) return;
+    
+            // Emit a STOP_TYPING_EVENT to inform other users/participants that typing has stopped
+            // socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+    
+            // Use the requestHandler to send the message and handle potential response or error
+            await requestHandler(
+                // Try to send the chat message with the given message and attached files
+                async () =>
+                    await sendMessage(
+                        currentChat.current?._id || '', // Chat ID or empty string if not available
+                        message, // Actual text message
+                        attachedFiles // Any attached files
+                    ),
+                null,
+                // On successful message sending, clear the message input and attached files, then update the UI
+                (res) => {
+                    setMessage(''); // Clear the message input
+                    setAttachedFiles([]); // Clear the list of attached files
+                    setMessages((prev) => [res.data, ...prev]); // Update messages in the UI
+                    updateChatLastMessage(currentChat.current?._id || '', res.data); // Update the last message in the chat
+                },
+    
+                // If there's an error during the message sending process, raise an alert
+                alert
+            );
+        };
+
+            /**
+     *  A  function to update the last message of a specified chat to update the chat list
+     */
+    const updateChatLastMessage = (
+        chatToUpdateId: string,
+        message: ChatMessageInterface // The new message to be set as the last message
+    ) => {
+        // Search for the chat with the given ID in the chats array
+        const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId)!;
+
+        // Update the 'lastMessage' field of the found chat with the new message
+        chatToUpdate.lastMessage = message;
+
+        // Update the 'updatedAt' field of the chat with the 'updatedAt' field from the message
+        chatToUpdate.updatedAt = message?.updatedAt;
+
+        // Update the state of chats, placing the updated chat at the beginning of the array
+        setChats([
+            chatToUpdate, // Place the updated chat first
+            ...chats.filter((chat) => chat._id !== chatToUpdateId), // Include all other chats except the updated one
+        ]);
+    };
+
     useEffect(() => {
         getChats();
-        
+
         // Retrieve the current chat details from local storage.
         const _currentChat = LocalStorage.get('currentChat');
 
@@ -108,6 +200,25 @@ const Chat = ({ path }: { path?: string }) => {
         // An empty dependency array ensures this useEffect runs only once, similar to componentDidMount.
     }, []);
 
+        /**
+     * Handles the event when a new message is received.
+     */
+        const onMessageReceived = (message: ChatMessageInterface) => {
+            console.log('recieved');
+            
+            // Check if the received message belongs to the currently active chat
+            if (message?.chat !== currentChat.current?._id) {
+                // If not, update the list of unread messages
+                setUnreadMessages((prev) => [message, ...prev]);
+            } else {
+                // If it belongs to the current chat, update the messages list for the active chat
+                setMessages((prev) => [message, ...prev]);
+            }
+    
+            // Update the last message for the chat to which the received message belongs
+            updateChatLastMessage(message.chat || '', message);
+        };
+
     useEffect(() => {
         // If the socket isn't initialized, we don't set up listeners.
         if (!socket) return;
@@ -122,7 +233,7 @@ const Chat = ({ path }: { path?: string }) => {
         // // Listener for when a user stops typing.
         // socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
         // // Listener for when a new message is received.
-        // socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
+        socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
         // // Listener for the initiation of a new chat.
         // socket.on(NEW_CHAT_EVENT, onNewChat);
         // // Listener for when a user leaves a chat.
@@ -137,7 +248,7 @@ const Chat = ({ path }: { path?: string }) => {
             // socket.off(DISCONNECT_EVENT, onDisconnect);
             // socket.off(TYPING_EVENT, handleOnSocketTyping);
             // socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
-            // socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
+            socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
             // socket.off(NEW_CHAT_EVENT, onNewChat);
             // socket.off(LEAVE_CHAT_EVENT, onChatLeave);
             // socket.off(UPDATE_GROUP_NAME_EVENT, onGroupNameChange);
@@ -159,165 +270,172 @@ const Chat = ({ path }: { path?: string }) => {
     return (
         <div class="main_page_container">
             <div className="sidebar">
-                <SideBar
-                    chats={chats}
-                    isConnected={isConnected}
-                    loadingChats={loadingChats}
-                    unreadMessages={unreadMessages}
-                    setMessages={setMessages}
-                    currentChat={currentChat}
-                    getMessages={getMessages}
-                />
+                <div class="sidebar_comp">
+                    {/* === logo contaianer === */}
+                    <div className="logo_container">
+                        <img src="public/logo.png" alt="" />
+                        <h1 class="logo_text">AlooChat</h1>
+                        {isConnected && <div class="connectionDot"></div>}
+                    </div>
+                    {/* === search container === */}
+                    <div className="search_container">
+                        <input
+                            type="text"
+                            class="form-control"
+                            placeholder="Search People"
+                        />
+                        <button className="btn btn_primary">+</button>
+                    </div>
+                    {loadingChats ? (
+                        <div>laoding...</div>
+                    ) : (
+                        // ===  List of all chats ===
+                        <div className="peoplelist_container">
+                            {/* pinned chats  */}
+                            {/* <div className="pinnedchats">
+                                <div className="title">
+                                    <img src="public/pinned_messages.png" alt="" />
+                                    <p>PINNED CHATS</p>
+                                </div>
+                                <SinglePersonList />
+                                <SinglePersonList />
+                                <SinglePersonList />
+                                <SinglePersonList />
+                            </div> */}
+
+                            {/* all chats  */}
+                            <div className="allchats">
+                                {/* title container  */}
+                                <div className="title">
+                                    <img src="public/all_messages.png" alt="" />
+                                    <p>ALL MESSAGES</p>
+                                </div>
+                                {chats.map((chat) => {
+                                    return (
+                                        <SinglePersonList
+                                            key={chat._id}
+                                            chat={chat}
+                                            unreadCount={
+                                                unreadMessages.filter(
+                                                    (n) => n.chat === chat._id
+                                                ).length
+                                            }
+                                            setMessages={setMessages}
+                                            currentChat={currentChat}
+                                            getMessages={getMessages}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        // ===  List of all chats - END ===
+                    )}
+                    <div className="bottom_fade"></div>
+                </div>
             </div>
+
+            {/* === conversation main container ===  */}
             <div className="main_section">
-                {
-                    currentChat.current ? <Conversation currentChat={currentChat} messages={messages} />  : <div>nope</div>
-                }
-            </div>
-        </div>
-    );
-};
+                {currentChat.current ? (
+                    <>  
+                        {/* === conversation header ===  */}
+                        <div class="conversation_head_container">
+                            <div className="info">
+                                <div className="dp_wrapper">
+                                    <img
+                                        src={`${
+                                            getChatObjectMetadata(currentChat.current , user!)?.avatar
+                                        }`
+                                    }
+                                        alt=""
+                                    />
+                                    <div className="dot"></div>
+                                </div>
+                                <div className="name_status_wrapper">
+                                    <p class="name">{getChatObjectMetadata(currentChat.current , user!)?.title}</p>
+                                    <p class="status">Online</p>
+                                </div>
+                            </div>
+                            <div className="options">
+                                <div>
+                                    <img src="./public/options.png" alt="" />
+                                </div>
+                            </div>
+                        </div>
+                        {/* === conversation header - END ===  */}
 
-const SideBar = ({
-    chats,
-    isConnected,
-    loadingChats,
-    unreadMessages,
-    setMessages,
-    currentChat,
-    getMessages,
-}: {
-    chats: ChatListItemInterface[];
-    isConnected: boolean;
-    loadingChats: boolean;
-    unreadMessages: ChatMessageInterface[];
-    setMessages: any;
-    currentChat: { current: ChatListItemInterface | null };
-    getMessages: () => void;
-}) => {
-    return (
-        <>
-            <div class="sidebar_comp">
-                {/* === logo contaianer === */}
-                <div className="logo_container">
-                    <img src="public/logo.png" alt="" />
-                    <h1 class="logo_text">AlooChat</h1>
-                    {isConnected && <div class="connectionDot"></div>}
-                </div>
-                {/* === search container === */}
-                <div className="search_container">
-                    <input
-                        type="text"
-                        class="form-control"
-                        placeholder="Search People"
-                    />
-                    <button className="btn btn_primary">+</button>
-                </div>
-                {loadingChats ? (
-                    <div>laoding...</div>
+                        {/* ===  conversation body === */}
+                        <div className="conversation_body_container">
+                            {messages &&
+                                messages.map((message, key) => {
+                                    return (
+                                        <SingleChat
+                                            message={message}
+                                            IsOwnChat={message.sender._id === user?._id}
+                                            key={key}
+                                        />
+                                    );
+                                })}
+                        </div>
+                        {/* === conversation body - END === */}
+
+                        {/* === conversation footer === */}
+                        <div className="conversation_footer_container">
+                            <div className="input_wrapper">
+                                <button>
+                                    <img src="public/emoji_btn.png" alt="" />
+                                </button>
+                                <input 
+                                type="text" 
+                                placeholder={'Type message..'}
+                                value={message}
+                                onInput={handleOnMessageChange}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        sendChatMessage();
+                                    }
+                                }} />
+                            </div>
+                            <div className="button_wrapper">
+                                <button className="attachments">
+                                    <img src="public/mic.png" alt="" />
+                                </button>
+                                <button className="attachments">
+                                    <img src="public/attachment.png" alt="" />
+                                </button>
+                                <button className="send btn btn_primary">
+                                    <span>Send</span>
+                                    <img src="public/send.png" alt="" />
+                                </button>
+                            </div>
+                        </div>
+                        {/* === conversation footer - END === */}
+
+                    </>
                 ) : (
-                    <PeoppleList
-                        chats={chats}
-                        unreadMessages={unreadMessages}
-                        setMessages={setMessages}
-                        currentChat={currentChat}
-                        getMessages={getMessages}
-                    />
+                    <div>nope</div>
                 )}
-                <div className="bottom_fade"></div>
             </div>
-        </>
-    );
-};
+            {/* === conversation main container - END ===  */}
 
-const PeoppleList = ({
-    chats,
-    unreadMessages,
-    setMessages,
-    currentChat,
-    getMessages,
-}: {
-    chats: ChatListItemInterface[];
-    unreadMessages: ChatMessageInterface[];
-    setMessages: (data: string) => void;
-    currentChat: { current: ChatListItemInterface | null };
-    getMessages: () => void;
-}) => {
-    return (
-        <>
-            <div className="peoplelist_container">
-                {/* pinned chats  */}
-                {/* <div className="pinnedchats">
-                    <div className="title">
-                        <img src="public/pinned_messages.png" alt="" />
-                        <p>PINNED CHATS</p>
-                    </div>
-                    <SinglePersonList />
-                    <SinglePersonList />
-                    <SinglePersonList />
-                    <SinglePersonList />
-                </div> */}
-
-                {/* all chats  */}
-                <div className="allchats">
-                    {/* title container  */}
-                    <div className="title">
-                        <img src="public/all_messages.png" alt="" />
-                        <p>ALL MESSAGES</p>
-                    </div>
-                    {chats.map((chat) => {
-                        return (
-                            <SinglePersonList
-                                key={chat._id}
-                                chat={chat}
-                                unreadCount={
-                                    unreadMessages.filter(
-                                        (n) => n.chat === chat._id
-                                    ).length
-                                }
-                                setMessages={setMessages}
-                                currentChat={currentChat}
-                                getMessages={getMessages}
-                            />
-                        );
-                    })}
-                </div>
-            </div>
-        </>
+        </div>
     );
 };
 
 const SinglePersonList = ({
     chat,
-    unreadCount = 55,
+    unreadCount,
     setMessages,
     currentChat,
     getMessages,
 }: {
     chat: ChatListItemInterface;
     unreadCount: number;
-    setMessages: (data: string) => void;
+    setMessages: StateUpdater<ChatMessageInterface[]>;
     currentChat: { current: ChatListItemInterface | null };
     getMessages: () => void;
 }) => {
     const { user } = useAuth();
-    interface participantMetaModel {
-        avatar: string | undefined; // Participant's avatar URL.
-        title: string | undefined; // Participant's username serves as the title.
-        description: string | undefined; // Email address of the participant.
-        lastMessage: string;
-    }
-    const [participant, setParticipant] =
-        useState<participantMetaModel | null>();
-
-    useEffect(() => {
-        setParticipant(getChatObjectMetadata(chat, user!));
-    }, []);
-
-    useEffect(() => {
-        console.log(participant);
-    }, [participant]);
-
     return (
         <>
             <div
@@ -331,17 +449,17 @@ const SinglePersonList = ({
                         return;
                     LocalStorage.set('currentChat', chat);
                     currentChat.current = chat;
-                    setMessages('');
+                    setMessages([]);
                     getMessages();
                 }}
             >
                 <div className="wrapper">
                     <div className="dp_container">
-                        <img class="dp" src={`${participant?.avatar}`} alt="" />
+                        <img class="dp" src={`${getChatObjectMetadata(chat, user!)?.avatar}`} alt="" />
                     </div>
                     <div className="details_container">
                         <div className="upper_row rows">
-                            <h4 class="name">{participant?.title || ''}</h4>
+                            <h4 class="name">{getChatObjectMetadata(chat, user!)?.title || ''}</h4>
                             <p class="time">
                                 {moment(chat.updatedAt)
                                     .add('TIME_ZONE', 'hours')
@@ -349,7 +467,7 @@ const SinglePersonList = ({
                             </p>
                         </div>
                         <div className="lower_row rows">
-                            <p class="msg">{participant?.lastMessage || ''}</p>
+                            <p class="msg">{getChatObjectMetadata(chat, user!)?.lastMessage.substring(0 , 25)}{ getChatObjectMetadata(chat, user!)?.lastMessage.length >= 24 ? '...' : '' || ''}</p>
                             {unreadCount > 0 && (
                                 <div className="notification">
                                     <p>{unreadCount}</p>
@@ -363,116 +481,37 @@ const SinglePersonList = ({
     );
 };
 
-const Conversation = (
-    { 
-        currentChat,
-        messages 
-    }: {
-        currentChat :  { current: ChatListItemInterface | null };
-        messages: ChatMessageInterface[] | null 
-    }
-    ) => {
-    return (
-        <>
-            <ConversationHead currentChat={currentChat} />
-            <ConversationBody messages={messages} />
-            <ConversationFooter />
-        </>
-    );
-};
-
-const ConversationHead = (
-    {
-        currentChat
-    } : {
-        currentChat :  { current: ChatListItemInterface | null };
-    }
-) => {
-
-    const { user } = useAuth();
-    interface participantMetaModel {
-        avatar: string | undefined; // Participant's avatar URL.
-        title: string | undefined; // Participant's username serves as the title.
-        description: string | undefined; // Email address of the participant.
-        lastMessage: string;
-    }
-    const [participant, setParticipant] =
-        useState<participantMetaModel | null>();
-
-    useEffect(() => {
-        setParticipant(getChatObjectMetadata(currentChat.current!, user!));
-    }, []);
-
-    useEffect(() => {
-        console.log(participant);
-    }, [participant]);
-
-    return (
-        <>
-            <div class="conversation_head_container">
-                <div className="info">
-                    <div className="dp_wrapper">
-                        <img src={`${participant?.avatar ? participant.avatar : 'https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'}`} alt="" />
-                        <div className="dot"></div>
-                    </div>
-                    <div className="name_status_wrapper">
-                        <p class="name">{participant?.title}</p>
-                        <p class="status">Online</p>
-                    </div>
-                </div>
-                <div className="options">
-                    <div>
-                        <img src='./public/options.png' alt="" />
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-};
-
-const ConversationBody = ({
-    messages,
-}: {
-    messages: ChatMessageInterface[] | null;
-}) => {
-
-    const {user} = useAuth()
-
-    console.log(messages);
-    
-
-    return (
-        <>
-            <div className="conversation_body_container">
-                {
-                    messages && messages.map((message , key) => {
-                        return (
-                            <SingleChat message={message} IsOwnChat={message.sender._id === user?._id} key={key} />
-                        )
-                    })
-                }
-            </div>
-        </>
-    );
-};
 
 const SingleChat = ({
     message,
-    IsOwnChat
+    IsOwnChat,
 }: {
     message: ChatMessageInterface;
-    IsOwnChat : boolean;
+    IsOwnChat: boolean;
 }) => {
     return (
         <>
-            <div className={`single_chat_container ${IsOwnChat ? 'right' : ''}`}>
+            <div
+                className={`single_chat_container ${IsOwnChat ? 'right' : ''}`}
+            >
                 <div className="dp_wrapper">
-                    <img src={`${message.sender.avatar ? message.sender.avatar : 'https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'}`} alt="" />
+                    <img
+                        src={`${
+                            message.sender.avatar?.url
+                                ? message.sender.avatar.url
+                                : 'https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'
+                        }`}
+                        alt=""
+                    />
                 </div>
                 <div className="message_wrapper">
                     <div className="name_wrapper">
                         <div className="name">{message.sender.username}</div>
-                        <div className="time">{moment(message.updatedAt).add("TIME_ZONE", "hours").fromNow(true)}{" "}</div>
+                        <div className="time">
+                            {moment(message.updatedAt)
+                                .add('TIME_ZONE', 'hours')
+                                .fromNow(true)}{' '}
+                        </div>
                     </div>
                     <div className="message">{message.content}</div>
                 </div>
@@ -481,31 +520,5 @@ const SingleChat = ({
     );
 };
 
-const ConversationFooter = () => {
-    return (
-        <>
-            <div className="conversation_footer_container">
-                <div className="input_wrapper">
-                    <button>
-                        <img src="public/emoji_btn.png" alt="" />
-                    </button>
-                    <input type="text" placeholder={'Type message..'} />
-                </div>
-                <div className="button_wrapper">
-                    <button className="attachments">
-                        <img src="public/mic.png" alt="" />
-                    </button>
-                    <button className="attachments">
-                        <img src="public/attachment.png" alt="" />
-                    </button>
-                    <button className="send btn btn_primary">
-                        <span>Send</span>
-                        <img src="public/send.png" alt="" />
-                    </button>
-                </div>
-            </div>
-        </>
-    );
-};
 
 export default Chat;

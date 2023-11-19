@@ -6,7 +6,7 @@ import { UserInterface } from '../interfaces/user';
 // A utility function for handling API requests with loading, success, and error handling
 export const requestHandler = async (
     api: () => Promise<AxiosResponse<APISuccessResponseInterface, any>>,
-    setLoading: (state: boolean) => void,
+    setLoading: ((state: boolean) => void )| null,
     onSuccess: (data: APISuccessResponseInterface) => void,
     onError: (error: string) => void
 ) => {
@@ -109,7 +109,7 @@ export const getChatObjectMetadata = (
       );
       // Return metadata specific to individual chats.
       return {
-        avatar: participant?.avatar.url, // Participant's avatar URL.
+        avatar: participant?.avatar?.url ? participant?.avatar?.url : "https://via.placeholder.com/100x100.png", // Participant's avatar URL.
         title: participant?.username, // Participant's username serves as the title.
         description: participant?.email, // Email address of the participant.
         lastMessage,

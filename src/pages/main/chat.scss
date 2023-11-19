@@ -200,7 +200,8 @@
             margin: 0 15px 0 0;
             position: relative;
             img {
-                width: 40px;
+                width: 40px;    
+                border-radius: 50%;
             }
             .dot {
                 width: 12px;
@@ -302,6 +303,9 @@
     flex-direction: row-reverse;
     .dp_wrapper {
         padding: 0 0 0 15px;
+        img{
+            border-radius: 50%;
+        }
     }
     .message_wrapper {
         align-items: flex-end;

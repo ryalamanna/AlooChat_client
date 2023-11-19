@@ -170,7 +170,9 @@ const Chat = ({ path }: { path?: string }) => {
                 />
             </div>
             <div className="main_section">
-                <Conversation messages={messages} />
+                {
+                    currentChat.current ? <Conversation currentChat={currentChat} messages={messages} />  : <div>nope</div>
+                }
             </div>
         </div>
     );
@@ -361,33 +363,66 @@ const SinglePersonList = ({
     );
 };
 
-const Conversation = ({ messages }: { messages: ChatMessageInterface[] | null }) => {
+const Conversation = (
+    { 
+        currentChat,
+        messages 
+    }: {
+        currentChat :  { current: ChatListItemInterface | null };
+        messages: ChatMessageInterface[] | null 
+    }
+    ) => {
     return (
         <>
-            <ConversationHead />
+            <ConversationHead currentChat={currentChat} />
             <ConversationBody messages={messages} />
             <ConversationFooter />
         </>
     );
 };
 
-const ConversationHead = () => {
+const ConversationHead = (
+    {
+        currentChat
+    } : {
+        currentChat :  { current: ChatListItemInterface | null };
+    }
+) => {
+
+    const { user } = useAuth();
+    interface participantMetaModel {
+        avatar: string | undefined; // Participant's avatar URL.
+        title: string | undefined; // Participant's username serves as the title.
+        description: string | undefined; // Email address of the participant.
+        lastMessage: string;
+    }
+    const [participant, setParticipant] =
+        useState<participantMetaModel | null>();
+
+    useEffect(() => {
+        setParticipant(getChatObjectMetadata(currentChat.current!, user!));
+    }, []);
+
+    useEffect(() => {
+        console.log(participant);
+    }, [participant]);
+
     return (
         <>
             <div class="conversation_head_container">
                 <div className="info">
                     <div className="dp_wrapper">
-                        <img src="public/dp1.png" alt="" />
+                        <img src={`${participant?.avatar ? participant.avatar : 'https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'}`} alt="" />
                         <div className="dot"></div>
                     </div>
                     <div className="name_status_wrapper">
-                        <p class="name">Ryal Rafter</p>
+                        <p class="name">{participant?.title}</p>
                         <p class="status">Online</p>
                     </div>
                 </div>
                 <div className="options">
                     <div>
-                        <img src="public/options.png" alt="" />
+                        <img src='./public/options.png' alt="" />
                     </div>
                 </div>
             </div>

@@ -13,7 +13,7 @@ import {
     ChatMessageInterface,
 } from '../../interfaces/chat';
 import moment from 'moment';
-import {h} from 'preact'
+import { createRef, h } from 'preact';
 
 const CONNECTED_EVENT = 'connected';
 const DISCONNECT_EVENT = 'disconnect';
@@ -30,24 +30,33 @@ const Chat = ({ path }: { path?: string }) => {
     const currentChat = useRef<ChatListItemInterface | null>(null);
 
     const { user } = useAuth();
-    const { socket } = useSocket();
+    const { socket , isConnected , setIsConnected } = useSocket();
 
-    const [isConnected, setIsConnected] = useState(false);
+
     const [loadingChats, setLoadingChats] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
+    const [selfTyping, setSelfTyping] = useState(false); // To track if the current user is typing
+    const [isTyping, setIsTyping] = useState(false); // To track if the other user is typing
+
+    // To keep track of the setTimeout function
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [chats, setChats] = useState<ChatListItemInterface[]>([]);
     const [unreadMessages, setUnreadMessages] = useState<
         ChatMessageInterface[]
     >([]); // To track unread messages
     const [messages, setMessages] = useState<ChatMessageInterface[]>([]);
-    const [message , setMessage] = useState<string>('');
+    const [message, setMessage] = useState<string>('');
     const [attachedFiles, setAttachedFiles] = useState<File[]>([]); // To store files attached to messages
-
 
     function onConnect() {
         setIsConnected(true);
+        alert('Connected');
     }
+
+    const onDisconnect = () => {
+        setIsConnected(false);
+    };
 
     const getChats = async () => {
         requestHandler(
@@ -69,6 +78,8 @@ const Chat = ({ path }: { path?: string }) => {
         if (!socket) return alert('Socket not available');
 
         // Emit an event to join the current chat
+        console.log(currentChat.current?._id , 'joined chat get message');
+        
         socket.emit(JOIN_CHAT_EVENT, currentChat.current?._id);
 
         // Filter out unread messages from the current chat as those will be read
@@ -94,72 +105,80 @@ const Chat = ({ path }: { path?: string }) => {
         );
     };
 
-    const handleOnMessageChange = (e: h.JSX.TargetedEvent<HTMLInputElement>) => {
+    const handleOnMessageChange = (
+        e: h.JSX.TargetedEvent<HTMLInputElement>
+    ) => {
         // Update the message state with the current input value
         setMessage(e.currentTarget.value);
-
+        
+        console.log(socket , isConnected , 'on change');
         // If socket doesn't exist or isn't connected, exit the function
-        // if (!socket || !isConnected) return;
+        if (!socket || !isConnected) return;
 
+        console.log(selfTyping , 'selftyping');
+        
+        
         // Check if the user isn't already set as typing
-        // if (!selfTyping) {
-        //     // Set the user as typing
-        //     setSelfTyping(true);
-
-        //     // Emit a typing event to the server for the current chat
-        //     socket.emit(TYPING_EVENT, currentChat.current?._id);
-        // }
+        if (!selfTyping) {
+            
+            //     // Set the user as typing
+            console.log(currentChat.current?._id ,  'typing event');
+            setSelfTyping(true);
+            
+            //     // Emit a typing event to the server for the current chat
+            socket.emit(TYPING_EVENT, currentChat.current?._id);
+        }
 
         // Clear the previous timeout (if exists) to avoid multiple setTimeouts from running
-        // if (typingTimeoutRef.current) {
-        //     clearTimeout(typingTimeoutRef.current);
-        // }
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
 
         // Define a length of time (in milliseconds) for the typing timeout
-        // const timerLength = 3000;
+        const timerLength = 3000;
 
         // Set a timeout to stop the typing indication after the timerLength has passed
-        // typingTimeoutRef.current = setTimeout(() => {
-        //     // Emit a stop typing event to the server for the current chat
-        //     socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+        typingTimeoutRef.current = setTimeout(() => {
+            // Emit a stop typing event to the server for the current chat
+            socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
 
-        //     // Reset the user's typing state
-        //     setSelfTyping(false);
-        // }, timerLength);
+            // Reset the user's typing state
+            setSelfTyping(false);
+        }, timerLength);
     };
 
-        // Function to send a chat message
-        const sendChatMessage = async () => {
-            // If no current chat ID exists or there's no socket connection, exit the function
-            if (!currentChat.current?._id || !socket) return;
-    
-            // Emit a STOP_TYPING_EVENT to inform other users/participants that typing has stopped
-            // socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
-    
-            // Use the requestHandler to send the message and handle potential response or error
-            await requestHandler(
-                // Try to send the chat message with the given message and attached files
-                async () =>
-                    await sendMessage(
-                        currentChat.current?._id || '', // Chat ID or empty string if not available
-                        message, // Actual text message
-                        attachedFiles // Any attached files
-                    ),
-                null,
-                // On successful message sending, clear the message input and attached files, then update the UI
-                (res) => {
-                    setMessage(''); // Clear the message input
-                    setAttachedFiles([]); // Clear the list of attached files
-                    setMessages((prev) => [res.data, ...prev]); // Update messages in the UI
-                    updateChatLastMessage(currentChat.current?._id || '', res.data); // Update the last message in the chat
-                },
-    
-                // If there's an error during the message sending process, raise an alert
-                alert
-            );
-        };
+    // Function to send a chat message
+    const sendChatMessage = async () => {
+        // If no current chat ID exists or there's no socket connection, exit the function
+        if (!currentChat.current?._id || !socket) return;
 
-            /**
+        // Emit a STOP_TYPING_EVENT to inform other users/participants that typing has stopped
+        socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+
+        // Use the requestHandler to send the message and handle potential response or error
+        await requestHandler(
+            // Try to send the chat message with the given message and attached files
+            async () =>
+                await sendMessage(
+                    currentChat.current?._id || '', // Chat ID or empty string if not available
+                    message, // Actual text message
+                    attachedFiles // Any attached files
+                ),
+            null,
+            // On successful message sending, clear the message input and attached files, then update the UI
+            (res) => {
+                setMessage(''); // Clear the message input
+                setAttachedFiles([]); // Clear the list of attached files
+                setMessages((prev) => [res.data, ...prev]); // Update messages in the UI
+                updateChatLastMessage(currentChat.current?._id || '', res.data); // Update the last message in the chat
+            },
+
+            // If there's an error during the message sending process, raise an alert
+            alert
+        );
+    };
+
+    /**
      *  A  function to update the last message of a specified chat to update the chat list
      */
     const updateChatLastMessage = (
@@ -182,6 +201,49 @@ const Chat = ({ path }: { path?: string }) => {
         ]);
     };
 
+    /**
+     * Handles the event when a new message is received.
+     */
+    const onMessageReceived = (message: ChatMessageInterface) => {
+        console.log('recieved');
+
+        // Check if the received message belongs to the currently active chat
+        if (message?.chat !== currentChat.current?._id) {
+            // If not, update the list of unread messages
+            setUnreadMessages((prev) => [message, ...prev]);
+        } else {
+            // If it belongs to the current chat, update the messages list for the active chat
+            setMessages((prev) => [message, ...prev]);
+        }
+
+        // Update the last message for the chat to which the received message belongs
+        updateChatLastMessage(message.chat || '', message);
+    };
+
+    /**
+     * Handles the "typing" event on the socket.
+     */
+    const handleOnSocketTyping = (chatId: string) => {
+        console.log('typingging on socket');
+        
+        // Check if the typing event is for the currently active chat.
+        if (chatId !== currentChat.current?._id) return;
+
+        // Set the typing state to true for the current chat.
+        setIsTyping(true);
+    };
+
+        /**
+     * Handles the "stop typing" event on the socket.
+     */
+        const handleOnSocketStopTyping = (chatId: string) => {
+            // Check if the stop typing event is for the currently active chat.
+            if (chatId !== currentChat.current?._id) return;
+    
+            // Set the typing state to false for the current chat.
+            setIsTyping(false);
+        };
+
     useEffect(() => {
         getChats();
 
@@ -193,45 +255,32 @@ const Chat = ({ path }: { path?: string }) => {
             // Set the current chat reference to the one from local storage.
             currentChat.current = _currentChat;
             // If the socket connection exists, emit an event to join the specific chat using its ID.
-            socket?.emit(JOIN_CHAT_EVENT, _currentChat.current?._id);
+            if( _currentChat.current?._id){
+                console.log('joined chat', _currentChat.current?._id);
+                socket?.emit(JOIN_CHAT_EVENT, _currentChat.current?._id);
+            }
+            
             // Fetch the messages for the current chat.
             getMessages();
         }
         // An empty dependency array ensures this useEffect runs only once, similar to componentDidMount.
     }, []);
 
-        /**
-     * Handles the event when a new message is received.
-     */
-        const onMessageReceived = (message: ChatMessageInterface) => {
-            console.log('recieved');
-            
-            // Check if the received message belongs to the currently active chat
-            if (message?.chat !== currentChat.current?._id) {
-                // If not, update the list of unread messages
-                setUnreadMessages((prev) => [message, ...prev]);
-            } else {
-                // If it belongs to the current chat, update the messages list for the active chat
-                setMessages((prev) => [message, ...prev]);
-            }
-    
-            // Update the last message for the chat to which the received message belongs
-            updateChatLastMessage(message.chat || '', message);
-        };
-
     useEffect(() => {
         // If the socket isn't initialized, we don't set up listeners.
-        if (!socket) return;
+        if (!socket){
+            alert('no socketttt'); return;
+        }
 
         // Set up event listeners for various socket events:
         // Listener for when the socket connects.
         socket.on(CONNECTED_EVENT, onConnect);
         // Listener for when the socket disconnects.
-        // socket.on(DISCONNECT_EVENT, onDisconnect);
+        socket.on(DISCONNECT_EVENT, onDisconnect);
         // // Listener for when a user is typing.
-        // socket.on(TYPING_EVENT, handleOnSocketTyping);
+        socket.on(TYPING_EVENT, handleOnSocketTyping);
         // // Listener for when a user stops typing.
-        // socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
+        socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
         // // Listener for when a new message is received.
         socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
         // // Listener for the initiation of a new chat.
@@ -245,9 +294,9 @@ const Chat = ({ path }: { path?: string }) => {
         return () => {
             // Remove all the event listeners we set up to avoid memory leaks and unintended behaviors.
             socket.off(CONNECTED_EVENT, onConnect);
-            // socket.off(DISCONNECT_EVENT, onDisconnect);
-            // socket.off(TYPING_EVENT, handleOnSocketTyping);
-            // socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
+            socket.off(DISCONNECT_EVENT, onDisconnect);
+            socket.off(TYPING_EVENT, handleOnSocketTyping);
+            socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
             socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
             // socket.off(NEW_CHAT_EVENT, onNewChat);
             // socket.off(LEAVE_CHAT_EVENT, onChatLeave);
@@ -337,22 +386,31 @@ const Chat = ({ path }: { path?: string }) => {
             {/* === conversation main container ===  */}
             <div className="main_section">
                 {currentChat.current ? (
-                    <>  
+                    <>
                         {/* === conversation header ===  */}
                         <div class="conversation_head_container">
                             <div className="info">
                                 <div className="dp_wrapper">
                                     <img
                                         src={`${
-                                            getChatObjectMetadata(currentChat.current , user!)?.avatar
-                                        }`
-                                    }
+                                            getChatObjectMetadata(
+                                                currentChat.current,
+                                                user!
+                                            )?.avatar
+                                        }`}
                                         alt=""
                                     />
                                     <div className="dot"></div>
                                 </div>
                                 <div className="name_status_wrapper">
-                                    <p class="name">{getChatObjectMetadata(currentChat.current , user!)?.title}</p>
+                                    <p class="name">
+                                        {
+                                            getChatObjectMetadata(
+                                                currentChat.current,
+                                                user!
+                                            )?.title
+                                        }
+                                    </p>
                                     <p class="status">Online</p>
                                 </div>
                             </div>
@@ -366,12 +424,20 @@ const Chat = ({ path }: { path?: string }) => {
 
                         {/* ===  conversation body === */}
                         <div className="conversation_body_container">
+                            {
+                                isTyping && <TypingConponent
+                                                message={messages[0]}
+                                                isGroupChat = {false}
+                                            />
+                            }
                             {messages &&
                                 messages.map((message, key) => {
                                     return (
                                         <SingleChat
                                             message={message}
-                                            IsOwnChat={message.sender._id === user?._id}
+                                            IsOwnChat={
+                                                message.sender._id === user?._id
+                                            }
                                             key={key}
                                         />
                                     );
@@ -382,27 +448,28 @@ const Chat = ({ path }: { path?: string }) => {
                         {/* === conversation footer === */}
                         <div className="conversation_footer_container">
                             <div className="input_wrapper">
-                                <button>
+                                {/* <button>
                                     <img src="public/emoji_btn.png" alt="" />
-                                </button>
-                                <input 
-                                type="text" 
-                                placeholder={'Type message..'}
-                                value={message}
-                                onInput={handleOnMessageChange}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        sendChatMessage();
-                                    }
-                                }} />
+                                </button> */}
+                                <input
+                                    type="text"
+                                    placeholder={'Type message..'}
+                                    value={message}
+                                    onInput={handleOnMessageChange}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            sendChatMessage();
+                                        }
+                                    }}
+                                />
                             </div>
                             <div className="button_wrapper">
-                                <button className="attachments">
+                                {/* <button className="attachments">
                                     <img src="public/mic.png" alt="" />
                                 </button>
                                 <button className="attachments">
                                     <img src="public/attachment.png" alt="" />
-                                </button>
+                                </button> */}
                                 <button className="send btn btn_primary">
                                     <span>Send</span>
                                     <img src="public/send.png" alt="" />
@@ -410,14 +477,12 @@ const Chat = ({ path }: { path?: string }) => {
                             </div>
                         </div>
                         {/* === conversation footer - END === */}
-
                     </>
                 ) : (
                     <div>nope</div>
                 )}
             </div>
             {/* === conversation main container - END ===  */}
-
         </div>
     );
 };
@@ -455,11 +520,20 @@ const SinglePersonList = ({
             >
                 <div className="wrapper">
                     <div className="dp_container">
-                        <img class="dp" src={`${getChatObjectMetadata(chat, user!)?.avatar}`} alt="" />
+                        <img
+                            class="dp"
+                            src={`${
+                                getChatObjectMetadata(chat, user!)?.avatar
+                            }`}
+                            alt=""
+                        />
                     </div>
                     <div className="details_container">
                         <div className="upper_row rows">
-                            <h4 class="name">{getChatObjectMetadata(chat, user!)?.title || ''}</h4>
+                            <h4 class="name">
+                                {getChatObjectMetadata(chat, user!)?.title ||
+                                    ''}
+                            </h4>
                             <p class="time">
                                 {moment(chat.updatedAt)
                                     .add('TIME_ZONE', 'hours')
@@ -467,7 +541,16 @@ const SinglePersonList = ({
                             </p>
                         </div>
                         <div className="lower_row rows">
-                            <p class="msg">{getChatObjectMetadata(chat, user!)?.lastMessage.substring(0 , 25)}{ getChatObjectMetadata(chat, user!)?.lastMessage.length >= 24 ? '...' : '' || ''}</p>
+                            <p class="msg">
+                                {getChatObjectMetadata(
+                                    chat,
+                                    user!
+                                )?.lastMessage.substring(0, 25)}
+                                {getChatObjectMetadata(chat, user!)?.lastMessage
+                                    .length >= 24
+                                    ? '...'
+                                    : '' || ''}
+                            </p>
                             {unreadCount > 0 && (
                                 <div className="notification">
                                     <p>{unreadCount}</p>
@@ -480,7 +563,6 @@ const SinglePersonList = ({
         </>
     );
 };
-
 
 const SingleChat = ({
     message,
@@ -513,12 +595,46 @@ const SingleChat = ({
                                 .fromNow(true)}{' '}
                         </div>
                     </div>
-                    <div className="message">{message.content}</div>
+                    <div className="message" >{message.content}</div>
                 </div>
             </div>
         </>
     );
 };
 
+const TypingConponent = ({
+    message,
+    isGroupChat,
+}: {
+    message: ChatMessageInterface;
+    isGroupChat: boolean;
+}) => {
+    return (
+        <div class='single_chat_container typing'>
+            <div className="dp_wrapper">
+                    <img
+                        src={`${
+                            isGroupChat === false && message.sender.avatar?.url
+                                ? message.sender.avatar.url
+                                : 'https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'
+                        }`}
+                        alt=""
+                    />
+            </div>
+            <div className="message_wrapper">
+                    <div className="name_wrapper">
+                        <div className="name">{isGroupChat && message.sender.username}</div>
+                        <div className="time">
+                        </div>
+                    </div>
+                    <div className="message">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+        </div>
+    )
+}
 
 export default Chat;

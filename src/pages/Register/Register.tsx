@@ -2,6 +2,7 @@ import { useState, useEffect } from 'preact/hooks';
 import './register.scss';
 import { h } from 'preact';
 import { useAuth } from '../../context/AuthContext';
+import { route } from 'preact-router';
 
 const Register = ({
     path,
@@ -104,7 +105,7 @@ const LoginForm = () => {
                     <span>or</span>
                 </div>
                 <p class="text-center q">Have no account yet?</p>
-                <button className="btn btn_primary_hollow rounded-pill w-100">
+                <button className="btn btn_primary_hollow rounded-pill w-100" onClick={()=>route('/register' , true)}>
                     Register
                 </button>
             </div>
@@ -186,7 +187,7 @@ const RegisterForm = () => {
                     <span>or</span>
                 </div>
                 <p class="text-center q">Already have an account?</p>
-                <button className="btn btn_primary_hollow rounded-pill w-100">
+                <button className="btn btn_primary_hollow rounded-pill w-100" onClick={()=>route('/login' , true)}>
                     Login
                 </button>
             </div>

@@ -61,3 +61,11 @@ export const sendMessage = (chatId: string, content: string, attachments: File[]
     }
     return apiClient.post(`/messages/${chatId}`, formData);
 };
+
+export const getAvailableUsers = () => {
+    return apiClient.get('/chats/users');
+};
+
+export const createUserChat = (receiverId: string) => {
+    return apiClient.post(`/chats/c/${receiverId}`);
+};

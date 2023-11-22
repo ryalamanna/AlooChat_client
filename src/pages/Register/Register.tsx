@@ -116,10 +116,10 @@ const RegisterForm = () => {
     const { register } = useAuth();
 
     const [data, setdata] = useState({
-        username: 'ryal_rafterr',
-        email: 'raftere@gmail.com',
-        password: '123456',
-        confirmPassword: '123456',
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
     });
     const handleDataChange =
         (name: string) => (e: h.JSX.TargetedEvent<HTMLInputElement>) => {
@@ -143,7 +143,7 @@ const RegisterForm = () => {
         <>
             <div class="layout_container">
                 <h5 class="text-center mb-4">Register</h5>
-                <form onSubmit={(e) => handleRegister(e)}>
+                <form onSubmit={(e) => handleRegister(e)} >
                     <input
                         type="text"
                         class="form-control my-3"

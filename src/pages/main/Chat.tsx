@@ -14,6 +14,7 @@ import {
 } from '../../interfaces/chat';
 import moment from 'moment';
 import { createRef, h } from 'preact';
+import AddChatModal from '../../components/AddChatModal/AddChatModal';
 
 const CONNECTED_EVENT = 'connected';
 const DISCONNECT_EVENT = 'disconnect';
@@ -32,6 +33,7 @@ const Chat = ({ path }: { path?: string }) => {
     const { user } = useAuth();
     const { socket , isConnected , setIsConnected } = useSocket();
 
+    const [openAddChat, setOpenAddChat] = useState(false); // To control the 'Add Chat' modal
 
     const [loadingChats, setLoadingChats] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
@@ -71,11 +73,14 @@ const Chat = ({ path }: { path?: string }) => {
     };
 
     const getMessages = async () => {
+        console.log('get');
+        
         // Check if a chat is selected, if not, show an alert
         if (!currentChat.current?._id) return alert('No chat is selected');
 
         // Check if socket is available, if not, show an alert
-        if (!socket) return alert('Socket not available');
+        if (!socket) return ;
+        // alert('Socket not available');
 
         // Emit an event to join the current chat
         console.log(currentChat.current?._id , 'joined chat get message');
@@ -101,7 +106,7 @@ const Chat = ({ path }: { path?: string }) => {
                 setMessages(data || []);
             },
             // Display any error alerts if they occur during the fetch
-            alert
+            (data : string)=>{ if(data == "User is not a part of this chat"){currentChat.current = null;} alert(data); }
         );
     };
 
@@ -266,10 +271,13 @@ const Chat = ({ path }: { path?: string }) => {
         // An empty dependency array ensures this useEffect runs only once, similar to componentDidMount.
     }, []);
 
+
     useEffect(() => {
+        getMessages();
+
         // If the socket isn't initialized, we don't set up listeners.
         if (!socket){
-            alert('no socketttt'); return;
+           return;
         }
 
         // Set up event listeners for various socket events:
@@ -317,6 +325,20 @@ const Chat = ({ path }: { path?: string }) => {
     }, [isConnected]);
 
     return (
+        <>
+        {
+            openAddChat &&
+            <AddChatModal 
+            open={openAddChat}
+            onClose={() => {
+                setOpenAddChat(false);
+            }}
+            onSuccess={() => {
+                getChats();
+            }}
+        />
+        }
+        
         <div class="main_page_container">
             <div className="sidebar">
                 <div class="sidebar_comp">
@@ -333,11 +355,12 @@ const Chat = ({ path }: { path?: string }) => {
                             class="form-control"
                             placeholder="Search People"
                         />
-                        <button className="btn btn_primary">+</button>
+                        <button className="btn btn_primary" onClick={()=>setOpenAddChat(true)}>+</button>
                     </div>
                     {loadingChats ? (
                         <div>laoding...</div>
                     ) : (
+
                         // ===  List of all chats ===
                         <div className="peoplelist_container">
                             {/* pinned chats  */}
@@ -377,8 +400,16 @@ const Chat = ({ path }: { path?: string }) => {
                                 })}
                             </div>
                         </div>
-                        // ===  List of all chats - END ===
+                        // ===  List of all chats - END ==
                     )}
+                    
+                    {
+                        chats.length == 0 && 
+                        <>  
+                            <h4>You have no chat !!!!</h4>
+                            <img src="./public/no-chats-unscreen.GIF" alt="" />
+                        </>
+                    }
                     <div className="bottom_fade"></div>
                 </div>
             </div>
@@ -484,6 +515,7 @@ const Chat = ({ path }: { path?: string }) => {
             </div>
             {/* === conversation main container - END ===  */}
         </div>
+        </>
     );
 };
 

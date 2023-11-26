@@ -69,3 +69,9 @@ export const getAvailableUsers = () => {
 export const createUserChat = (receiverId: string) => {
     return apiClient.post(`/chats/c/${receiverId}`);
 };
+
+export const createGroupChat = (data: { name: string; participants: string[] }) => {
+    console.log('group');
+    
+    return apiClient.post(`/chats/group`, data);
+};

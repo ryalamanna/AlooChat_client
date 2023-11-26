@@ -43,6 +43,9 @@ const Chat = ({ path }: { path?: string }) => {
     // To keep track of the setTimeout function
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // to focud on the mesasge input as soon as the current chat is changed 
+    const messageInputRef = useRef<HTMLInputElement | null>(null);
+
     const [chats, setChats] = useState<ChatListItemInterface[]>([]);
     const [unreadMessages, setUnreadMessages] = useState<
         ChatMessageInterface[]
@@ -324,6 +327,14 @@ const Chat = ({ path }: { path?: string }) => {
         console.log(isConnected);
     }, [isConnected]);
 
+    useEffect(() => {
+    // to focus on the mesasge input as soon as the current chat is changed 
+        if (messageInputRef.current) {
+            messageInputRef.current.focus();
+          }
+    }, [currentChat.current])
+    
+
     return (
         <>
         {
@@ -483,6 +494,7 @@ const Chat = ({ path }: { path?: string }) => {
                                     <img src="public/emoji_btn.png" alt="" />
                                 </button> */}
                                 <input
+                                    ref={messageInputRef}
                                     type="text"
                                     placeholder={'Type message..'}
                                     value={message}

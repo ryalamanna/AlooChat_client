@@ -75,3 +75,7 @@ export const createGroupChat = (data: { name: string; participants: string[] }) 
     
     return apiClient.post(`/chats/group`, data);
 };
+
+export const deleteOneOnOneChat = (chatId: string) => {
+    return apiClient.delete(`/chats/remove/${chatId}`);
+};

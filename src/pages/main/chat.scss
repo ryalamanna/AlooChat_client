@@ -124,8 +124,46 @@
     border-bottom: 1px solid #ffffff;
     div.wrapper {
         display: grid;
-        grid-template-columns: 1fr 6fr;
+        grid-template-columns: .1fr 1fr 6fr;
         column-gap: 12px;
+        .chat_options{
+            all: unset;
+            position: relative;
+            padding: 0 5px;
+            img{
+                width: 5px;
+            }
+            .dropdown{
+                display: none;
+                position: absolute;
+                top: 50%;
+                left: 10px;
+                border-radius: 5px;
+                background-color: #fff;
+                border: 2px solid var(--primary-color);
+                padding: 5px;
+                    .dropdown_item{
+                        all : unset;
+                        padding: 10px 20px;
+                        width: 150px;
+                    }
+                    .delete_button{
+                        border: 2px solid #ff9696;
+                        background-color: #ffeaea;
+                        border-radius: inherit;
+                    }
+                    .info_button{
+                        border: 2px solid #a996ff;
+                        background-color: #eaf6ff;
+                        border-radius: inherit;
+                    }
+            }
+        }
+        .chat_options:hover{
+            .dropdown{
+                display: block;
+            }
+        }
         .dp_container {
             .dp {
                 width: 100%;

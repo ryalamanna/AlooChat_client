@@ -762,32 +762,32 @@ const TypingConponent = ({
     currentChat?: { current: ChatListItemInterface | null };
     typingParticipant?: string;
 }) => {
-  
-        console.log(typingParticipant , "typing participant");
-        
-        console.log(
-            currentChat?.current?.participants, 'tytyty'
-        );
+    const {user} = useAuth()
+    const [url , setUrl] = useState<string | undefined>('')
+    const [username , setusername] = useState<string | undefined>('')
+
+    useEffect(() => {
+        setusername(currentChat?.current?.participants.filter(participant => participant._id !== user?._id)[0].username)
+
+        let sender = currentChat?.current?.participants.filter(participant => participant._id !== user?._id)[0].avatar;
+        if(sender && sender.url){
+            setUrl(sender.url)
+        }
+    }, [])
     
+
+    useEffect(() => {
+      console.log(username);
+      
+    }, [username])
     
+
     return (
         <div class="single_chat_container typing">
             <div className="dp_wrapper">
                 {!isGroupChat && (
                     <img
-                        src={`${
-                            isGroupChat === false && message.sender.avatar?.url
-                                ? message.sender.avatar.url
-                                : currentChat?.current?.participants.filter(
-                                      (participant) => {
-                                          return (
-                                              participant._id ==
-                                              typingParticipant
-                                          );
-                                      }
-                                  )[0].avatar?.url
-                            // 'https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'
-                        }`}
+                        src={url || "https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg"}
                         alt=""
                     />
                 )}
@@ -795,7 +795,7 @@ const TypingConponent = ({
             <div className="message_wrapper">
                 <div className="name_wrapper">
                     <div className="name">
-                        {!isGroupChat && message.sender.username}
+                        {!isGroupChat && username}
                         {isGroupChat &&
                             currentChat?.current?.participants.filter(
                                 (participant) => {

@@ -1,18 +1,18 @@
 /* eslint-disable react-refresh/only-export-components */
-import  {  StateUpdater, useContext, useEffect, useState } from 'preact/hooks';
-import socketio, { Socket } from 'socket.io-client';
+import  {  useContext, useEffect, useState } from 'preact/hooks';
+import socketio from 'socket.io-client';
 import { LocalStorage } from '../utils';
 import {createContext , FunctionComponent} from 'preact'
 
 const CONNECTED_EVENT = 'connected';
-const DISCONNECT_EVENT = 'disconnect';
-const JOIN_CHAT_EVENT = 'joinChat';
-const NEW_CHAT_EVENT = 'newChat';
-const TYPING_EVENT = 'typing';
-const STOP_TYPING_EVENT = 'stopTyping';
-const MESSAGE_RECEIVED_EVENT = 'messageReceived';
-const LEAVE_CHAT_EVENT = 'leaveChat';
-const UPDATE_GROUP_NAME_EVENT = 'updateGroupName';
+// const DISCONNECT_EVENT = 'disconnect';
+// const JOIN_CHAT_EVENT = 'joinChat';
+// const NEW_CHAT_EVENT = 'newChat';
+// const TYPING_EVENT = 'typing';
+// const STOP_TYPING_EVENT = 'stopTyping';
+// const MESSAGE_RECEIVED_EVENT = 'messageReceived';
+// const LEAVE_CHAT_EVENT = 'leaveChat';
+// const UPDATE_GROUP_NAME_EVENT = 'updateGroupName';
 // const SOCKET_ERROR_EVENT = "socketError";
 
 

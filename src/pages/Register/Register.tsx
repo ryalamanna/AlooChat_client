@@ -11,6 +11,8 @@ const Register = ({
     path?: string;
     isRegistered?: boolean;
 }) => {
+    console.log(path);
+    
     return (
         <>
             <img class="app_bg_img " src="/public/torus.png" alt="" />

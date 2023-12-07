@@ -7,11 +7,9 @@ import { h } from 'preact';
 import { ChatListItemInterface } from '../../interfaces/chat';
 
 const AddChatModal = ({
-    open,
     onClose,
     onSuccess,
 }: {
-    open: boolean;
     onClose: () => void;
     onSuccess: (chat: ChatListItemInterface) => void;
 }) => {

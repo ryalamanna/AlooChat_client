@@ -13,7 +13,7 @@ import {
     ChatMessageInterface,
 } from '../../interfaces/chat';
 import moment from 'moment';
-import { createRef, h } from 'preact';
+import {  h } from 'preact';
 import AddChatModal from '../../components/AddChatModal/AddChatModal';
 
 const CONNECTED_EVENT = 'connected';
@@ -24,10 +24,12 @@ const TYPING_EVENT = 'typing';
 const STOP_TYPING_EVENT = 'stopTyping';
 const MESSAGE_RECEIVED_EVENT = 'messageReceived';
 const LEAVE_CHAT_EVENT = 'leaveChat';
-const UPDATE_GROUP_NAME_EVENT = 'updateGroupName';
+// const UPDATE_GROUP_NAME_EVENT = 'updateGroupName';
 // const SOCKET_ERROR_EVENT = "socketError";
 
 const Chat = ({ path }: { path?: string }) => {
+    console.log(path);
+    
     const currentChat = useRef<ChatListItemInterface | null>(null);
 
     const { user } = useAuth();
@@ -38,6 +40,8 @@ const Chat = ({ path }: { path?: string }) => {
     const [loadingChats, setLoadingChats] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [selfTyping, setSelfTyping] = useState(false); // To track if the current user is typing
+    console.log(loadingMessages);
+    
     const [isTyping, setIsTyping] = useState(false); // To track if the other user is typing
     const [typingParticipant, setTypingParticipantt] = useState<string>(''); // to track which user is typing
 
@@ -365,7 +369,6 @@ const Chat = ({ path }: { path?: string }) => {
         <>
             {openAddChat && (
                 <AddChatModal
-                    open={openAddChat}
                     onClose={() => {
                         setOpenAddChat(false);
                     }}
@@ -523,7 +526,6 @@ const Chat = ({ path }: { path?: string }) => {
                             <div className="conversation_body_container">
                                 {isTyping && (
                                     <TypingConponent
-                                        message={messages[0]}
                                         isGroupChat={
                                             currentChat.current.isGroupChat
                                         }
@@ -752,12 +754,10 @@ const SingleMessage = ({
 };
 
 const TypingConponent = ({
-    message,
     isGroupChat,
     currentChat,
     typingParticipant,
 }: {
-    message: ChatMessageInterface;
     isGroupChat: boolean;
     currentChat?: { current: ChatListItemInterface | null };
     typingParticipant?: string;

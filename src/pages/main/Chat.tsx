@@ -178,7 +178,7 @@ const Chat = ({ path }: { path?: string }) => {
                 await sendMessage(
                     currentChat.current?._id || '', // Chat ID or empty string if not available
                     message, // Actual text message
-                    attachedFiles // Any attached files
+                    // attachedFiles // Any attached files
                 ),
             null,
             // On successful message sending, clear the message input and attached files, then update the UI

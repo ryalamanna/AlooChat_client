@@ -23,7 +23,8 @@ export function App() {
 
 
 const AuthComp = ({path , token , user}:{path:string , token :string | null, user : UserInterface | null}) =>{
-
+    console.log(path);
+    
     useEffect(() => {
         if(token && user?._id){
             console.log('auth');

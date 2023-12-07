@@ -48,7 +48,10 @@ export const getChatMessages = (chatId: string) => {
     return apiClient.get(`/messages/${chatId}`);
 };
 
-export const sendMessage = (chatId: string, content: string, attachments: File[]) => {
+export const sendMessage = (chatId: string, 
+    content: string, 
+    // attachments: File[]
+    ) => {
     // const formData = new FormData();
     // if (content) {
     //     formData.append('content', content);

@@ -58,7 +58,8 @@ const Chat = ({ path }: { path?: string }) => {
     const [messages, setMessages] = useState<ChatMessageInterface[]>([]);
     const [message, setMessage] = useState<string>('');
     const [attachedFiles, setAttachedFiles] = useState<File[]>([]); // To store files attached to messages
-
+    console.log(attachedFiles);
+    
     function onConnect() {
         setIsConnected(true);
         alert('Connected');

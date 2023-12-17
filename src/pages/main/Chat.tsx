@@ -15,7 +15,7 @@ import {
 import moment from 'moment';
 import {  h } from 'preact';
 import AddChatModal from '../../components/AddChatModal/AddChatModal';
-
+import backArrow from '../../../public/back.png'
 const CONNECTED_EVENT = 'connected';
 const DISCONNECT_EVENT = 'disconnect';
 const JOIN_CHAT_EVENT = 'joinChat';
@@ -492,7 +492,7 @@ const Chat = ({ path }: { path?: string }) => {
                             <div class="conversation_head_container">
                                 <div className="info">
                                     <button className='back' onClick={()=>setShowing('chats')}>
-                                        <img src="./public/back.png" alt="" />
+                                        <img src={backArrow} alt="" />
                                     </button>
                                     <div className="dp_wrapper">
                                         <img

@@ -23,6 +23,16 @@
     }
 }
 
+@media screen and (max-width :767px){
+    .main_page_container.chats{
+        grid-template-columns: 1fr;
+    }
+    
+    .main_page_container.messages{
+        grid-template-columns: 0 1fr;
+    }
+}
+
 .sidebar_comp {
     font-size: 16px;
     height: 100vh;
@@ -103,6 +113,10 @@
         }
     }
 }
+
+
+
+
 
 //to hide the scroll bar
 .peoplelist_container::-webkit-scrollbar {
@@ -231,6 +245,15 @@
     width: 100%;
     z-index: 1;
     background-color: #ffffff;
+    .back{
+        all: unset;
+        margin-right: 15px ;
+    }
+    @media (min-width: 768px){
+        .back{
+            display: none;
+        }
+    }
     .info {
         display: flex;
         align-items: center;

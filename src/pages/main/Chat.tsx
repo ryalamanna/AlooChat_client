@@ -58,6 +58,8 @@ const Chat = ({ path }: { path?: string }) => {
     const [messages, setMessages] = useState<ChatMessageInterface[]>([]);
     const [message, setMessage] = useState<string>('');
     const [attachedFiles, setAttachedFiles] = useState<File[]>([]); // To store files attached to messages
+
+    const [showing , setShowing] = useState<'chats' | 'messages'>('chats');
     console.log(attachedFiles);
     
     function onConnect() {
@@ -379,7 +381,7 @@ const Chat = ({ path }: { path?: string }) => {
                 />
             )}
 
-            <div class="main_page_container">
+            <div class={`main_page_container ${showing}`}>
                 <div className="sidebar">
                     <div class="sidebar_comp">
                         {/* === logo contaianer === */}
@@ -460,6 +462,7 @@ const Chat = ({ path }: { path?: string }) => {
                                                         );
                                                     }
                                                 }}
+                                                setShowing = {setShowing}
                                             />
                                         );
                                     })}
@@ -488,6 +491,9 @@ const Chat = ({ path }: { path?: string }) => {
                             {/* === conversation header ===  */}
                             <div class="conversation_head_container">
                                 <div className="info">
+                                    <button className='back' onClick={()=>setShowing('chats')}>
+                                        <img src="./public/back.png" alt="" />
+                                    </button>
                                     <div className="dp_wrapper">
                                         <img
                                             src={`${
@@ -600,7 +606,8 @@ const SingleChat = ({
     setMessages,
     currentChat,
     getMessages,
-    onChatDelete
+    onChatDelete,
+    setShowing
 }: {
     chat: ChatListItemInterface;
     unreadCount: number;
@@ -608,6 +615,7 @@ const SingleChat = ({
     currentChat: { current: ChatListItemInterface | null };
     getMessages: () => void;
     onChatDelete: (chatId: string) => void;
+    setShowing: (data : 'chats' | 'messages') => void;
 }) => {
     const { user } = useAuth();
 
@@ -641,6 +649,7 @@ const SingleChat = ({
                     currentChat.current = chat;
                     setMessages([]);
                     getMessages();
+                    setShowing('messages');
                 }}
             >
                 <div className="wrapper">

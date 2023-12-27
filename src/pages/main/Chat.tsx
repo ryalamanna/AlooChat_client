@@ -16,6 +16,14 @@ import moment from 'moment';
 import {  h } from 'preact';
 import AddChatModal from '../../components/AddChatModal/AddChatModal';
 import backArrow from '../../../public/back.png'
+import logo from '../../../public/logo.png'
+import noChatGif from '../../../public/no-chats-unscreen.gif'
+import allMessageImg from '../../../public/all_messages.png'
+import optionsImg from '../../../public/options.png'
+import sendImg from '../../../public/send.png'
+
+
+
 const CONNECTED_EVENT = 'connected';
 const DISCONNECT_EVENT = 'disconnect';
 const JOIN_CHAT_EVENT = 'joinChat';
@@ -386,7 +394,7 @@ const Chat = ({ path }: { path?: string }) => {
                     <div class="sidebar_comp">
                         {/* === logo contaianer === */}
                         <div className="logo_container">
-                            <img src="public/logo.png" alt="" />
+                            <img src={logo} alt="" />
                             <h1 class="logo_text">AlooChat</h1>
                             {isConnected && <div class="connectionDot"></div>}
                         </div>
@@ -426,7 +434,7 @@ const Chat = ({ path }: { path?: string }) => {
                                     {/* title container  */}
                                     <div className="title">
                                         <img
-                                            src="public/all_messages.png"
+                                            src={allMessageImg}
                                             alt=""
                                         />
                                         <p>ALL MESSAGES</p>
@@ -475,7 +483,7 @@ const Chat = ({ path }: { path?: string }) => {
                             <>
                                 <h4>You have no chat !!!!</h4>
                                 <img
-                                    src="./public/no-chats-unscreen.GIF"
+                                    src={noChatGif}
                                     alt=""
                                 />
                             </>
@@ -521,7 +529,7 @@ const Chat = ({ path }: { path?: string }) => {
                                 <div className="options">
                                     <div>
                                         <img
-                                            src="./public/options.png"
+                                            src={optionsImg}
                                             alt=""
                                         />
                                     </div>
@@ -584,7 +592,7 @@ const Chat = ({ path }: { path?: string }) => {
                                 </button> */}
                                     <button className="send btn btn_primary">
                                         <span>Send</span>
-                                        <img src="public/send.png" alt="" />
+                                        <img src={sendImg} alt="" />
                                     </button>
                                 </div>
                             </div>
@@ -654,7 +662,7 @@ const SingleChat = ({
             >
                 <div className="wrapper">
                     <button class='chat_options' >
-                        <img src="./public/options.png" alt="" />
+                        <img src={optionsImg} alt="" />
                         <div className="dropdown">
                             {
                                 !chat.isGroupChat && 

@@ -134,28 +134,34 @@ const AddChatModal = ({
             <div className="modal_container">
                 <div className="modal_header">
                     <button className="close" onClick={() => handleClose()}>
-                        close
+                        X
                     </button>
                 </div>
                 <div className="modal_body">
-                    is group?
-                    <label class="switch">
+                    <div className="switch_wrapper">
+                        <p>Is Group?</p>
+                        <label class="switch">
                         <input
                             type="checkbox"
                             onChange={(e) => handleGroupCheckboxChange(e)}
                         />
                         <span class="slider round"></span>
                     </label>
-                    <br />
+                    </div>
+                    
                     {/* set group name  */}
                     {
-                      isGroupChat && <>
-                      <label>Group Name</label> &nbsp;
-                        <input 
-                        type="text"
-                        onChange={e=>{
-                          setGroupName(e.currentTarget.value);
-                        }} />
+                      isGroupChat && 
+                      <>
+                      <div className="group_name_wrapper">
+                            <label>Group Name</label> &nbsp;
+                            <input 
+                            type="text"
+                            onChange={e=>{
+                            setGroupName(e.currentTarget.value);
+                            }} />
+                      </div>
+                      
                       </>
                     }
                     <br />
@@ -204,21 +210,20 @@ const AddChatModal = ({
                                 ?.map((participant, key) => {
                                     return (
                                         <>
+                                        <div className="group_member_card">
                                             <span key={key}>
-                                                {participant.username}
-                                            </span>
-                                            &nbsp;
-                                            &nbsp;
-                                            <button
-                                              onClick={()=>
-                                                setGroupParticipants(
-                                                  groupParticipants.filter((user) =>{
-                                                    return !user.includes(participant._id);
-                                                  })
-                                                )
-                                              }
-                                            >Remove</button>
-                                            <br />
+                                                    {participant.username}
+                                                </span>
+                                                <button
+                                                onClick={()=>
+                                                    setGroupParticipants(
+                                                    groupParticipants.filter((user) =>{
+                                                        return !user.includes(participant._id);
+                                                    })
+                                                    )
+                                                }
+                                                >X</button>
+                                        </div>
                                         </>
                                     );
                                 })}

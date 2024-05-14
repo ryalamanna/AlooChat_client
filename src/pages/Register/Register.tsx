@@ -20,6 +20,7 @@ const Register = ({
                 <div class="register_canvas ">
                     <div class="section left">
                         <h1 class="weight_700 text_white">AlooChat</h1>
+                        <h4>- By Ryal</h4>
                         <div>
                             {/* <img src="public/register_left.png" alt="" /> */}
                             <img

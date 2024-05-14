@@ -481,7 +481,7 @@ const Chat = ({ path }: { path?: string }) => {
 
                         {chats.length == 0 && (
                             <>
-                                <h4>You have no chat !!!!</h4>
+                                <h4 class='noChatText'>You have no chat !!!! LOL</h4>
                                 <img
                                     src={noChatGif}
                                     alt=""
